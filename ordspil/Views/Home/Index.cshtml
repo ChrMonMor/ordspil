@@ -1,0 +1,15 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+
+<div class="jumbotron">
+    @using (Html.BeginForm())
+    {
+        for (int i = 0; i < ViewBag.SecretWordLenght; i++)
+        {
+            <input type="text" name="@i" maxlength="1" required lang="da" id="guessBox"/>
+        }
+        <input type="submit" value="check"/>
+     }
+</div>
+
