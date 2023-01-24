@@ -48,7 +48,7 @@ namespace editwordlist
         {
             string[] readText = File.ReadAllLines(path);
             readText = RemoveFlawsFromArray(readText);
-            return readText = readText.Where(x=>x.Length>min && x.Length<max).ToArray();
+            return readText = readText.Where(x=>x.Length>min-1 && x.Length<max+1).ToArray();
         }
 
     }
