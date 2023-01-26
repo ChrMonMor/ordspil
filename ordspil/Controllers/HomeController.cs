@@ -7,8 +7,8 @@ using editwordlist;
 using ordspil.Models;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Xml.Serialization;
 using System.Security.Policy;
+using Antlr.Runtime.Tree;
 
 namespace ordspil.Controllers
 {
@@ -18,9 +18,11 @@ namespace ordspil.Controllers
 
         public ActionResult Index()
         {
-            StartGame(); 
+            SecretWordModel Game = StartGame(5,5);
+            ViewBag.GuessResult = "0000000000000000000000000000000000000000000000000000000000000";
             ViewBag.SecretWordLenght = Game.SecretWord.Length;
             ViewBag.OldGuesses = Game.OldGuesses;
+            ViewBag.OldResults = Game.TriedLetters;
 
             return View();
         }
@@ -32,19 +34,42 @@ namespace ordspil.Controllers
             {
                 test+=word;
             }
-            UpdateGame(test);
             SecretWordModel GetGame = GetSecretWord();
+            string newAnswer =  CheckingGuess(test, GetGame.SecretWord);
+            GetGame = UpdateData(test, newAnswer, GetGame);
+            ViewBag.GuessResult = newAnswer;
             ViewBag.SecretWordLenght = GetGame.SecretWord.Length;
             ViewBag.OldGuesses = GetGame.OldGuesses;
+            ViewBag.OldResults = GetGame.TriedLetters;
 
             return View();
         }
-        private void StartGame()
+        [HttpGet]
+        public ActionResult Index(int? min, int? max)
         {
+            if (min == null)
+            {
+                min = 5;
+            }
+            if (max == null)
+            {
+                max = 5;
+            }
+            SecretWordModel Game = StartGame((int)min, (int)max);
+            ViewBag.GuessResult = "0000000000000000000000000000000000000000000000000000000000000";
+            ViewBag.SecretWordLenght = Game.SecretWord.Length;
+            ViewBag.OldGuesses = Game.OldGuesses;
+            ViewBag.OldResults = Game.TriedLetters;
+            return View();
+        }
+        private SecretWordModel StartGame(int min, int max)
+        {
+            SecretWordModel Game = new SecretWordModel(min, max);
             Stream stream = System.IO.File.Open("Game.dat", FileMode.Open);
             BinaryFormatter bf = new BinaryFormatter();
             bf.Serialize(stream, Game);
             stream.Close();
+            return Game;
         }
         private SecretWordModel GetSecretWord()
         {
@@ -54,21 +79,47 @@ namespace ordspil.Controllers
             stream.Close();
             return GetGame;
         }
-        private void UpdateGame(string userGuess)
+        private SecretWordModel UpdateData(string userGuess, string answer,SecretWordModel game)
         {
-            SecretWordModel GetGame = GetSecretWord();
-
-            GetGame.AddGuess(userGuess);
-
-            Console.WriteLine(GetGame.OldGuesses);
-
-            XmlSerializer serializer = new XmlSerializer(typeof(SecretWordModel));
-
-            using (TextWriter ms = new StreamWriter(@"C:\Users\chri615w\source\repos\ordspil\Game.xml"))
+            game.AddGuess(userGuess, answer);
+            Stream stream = System.IO.File.Open("Game.dat", FileMode.Open);
+            BinaryFormatter bf = new BinaryFormatter();
+            bf.Serialize(stream, game);
+            stream.Close();
+            return game;
+        }
+        // 0: Letter is not in word
+        // 1: Letter is in Word, but not this position
+        // 2: Correct letter for this position
+        private string CheckingGuess(string guess, string secretWord)
+        {
+            string result = string.Empty;
+            string correct = string.Empty;
+            string wrongplace = string.Empty;
+            for (int i = 0; i < secretWord.Length; i++)
             {
-                serializer.Serialize(ms, GetGame);
-            }
+                if (guess[i] == secretWord[i])
+                {
+                    result += "2";
+                    correct += guess[i];
+                }
+                else if (secretWord.Substring(i, secretWord.Length-i).Contains(guess[i]))
+                {
+                    result += "1";
 
+                    wrongplace += guess[i];
+                }
+                else if (secretWord.Substring(0,i).Contains(guess[i]))
+                {
+                    result += "1";
+                    wrongplace += guess[i];
+                }
+                else
+                {
+                    result += "0";
+                }
+            }
+            return result;
         }
     }
 }
