@@ -6,8 +6,7 @@
 <div class="jumbotron">
     @using (Html.BeginForm("Index", "Home", FormMethod.Get))
     {
-        <input type="number" name="min" />
-        <input type="number" name="max" />
+        <input type="number" name="count" />
         <input type="submit" value="New Game" />
     }
     <input type="button" value="New Game" onclick="@("window.location.href='" + @Url.Action("Index", "Home") + "'");" />

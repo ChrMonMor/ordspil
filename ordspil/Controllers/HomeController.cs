@@ -14,8 +14,6 @@ namespace ordspil.Controllers
 {
     public class HomeController : Controller
     {
-        public SecretWordModel Game = new SecretWordModel(4, 4);
-
         public ActionResult Index()
         {
             SecretWordModel Game = StartGame(5,5);
@@ -23,6 +21,7 @@ namespace ordspil.Controllers
             ViewBag.SecretWordLenght = Game.SecretWord.Length;
             ViewBag.OldGuesses = Game.OldGuesses;
             ViewBag.OldResults = Game.TriedLetters;
+            ViewBag.Secret = Game.SecretWord;
 
             return View();
         }
@@ -41,25 +40,24 @@ namespace ordspil.Controllers
             ViewBag.SecretWordLenght = GetGame.SecretWord.Length;
             ViewBag.OldGuesses = GetGame.OldGuesses;
             ViewBag.OldResults = GetGame.TriedLetters;
+            ViewBag.Secret = GetGame.SecretWord;
 
             return View();
         }
         [HttpGet]
-        public ActionResult Index(int? min, int? max)
+        public ActionResult Index(int? count)
         {
-            if (min == null)
+            if (count == null)
             {
-                min = 5;
+                count = 5;
             }
-            if (max == null)
-            {
-                max = 5;
-            }
-            SecretWordModel Game = StartGame((int)min, (int)max);
+            SecretWordModel Game = StartGame((int)count, (int)count);
             ViewBag.GuessResult = "0000000000000000000000000000000000000000000000000000000000000";
             ViewBag.SecretWordLenght = Game.SecretWord.Length;
             ViewBag.OldGuesses = Game.OldGuesses;
             ViewBag.OldResults = Game.TriedLetters;
+            ViewBag.Secret = Game.SecretWord;
+
             return View();
         }
         private SecretWordModel StartGame(int min, int max)
@@ -98,26 +96,44 @@ namespace ordspil.Controllers
             string wrongplace = string.Empty;
             for (int i = 0; i < secretWord.Length; i++)
             {
+                if (!secretWord.Contains(guess[i]))
+                {
+                    result += "0";
+                    wrongplace += "0";
+                    continue;
+                }
                 if (guess[i] == secretWord[i])
                 {
                     result += "2";
                     correct += guess[i];
+                    if (wrongplace.Contains(guess[i]))
+                    {
+                        int here = wrongplace.IndexOf(guess[i]);
+                        char[] temp =  result.ToCharArray();
+                        temp[here] = '0';
+                        result = new string(temp);
+                    }
+                    wrongplace += "0";
+                    continue;
                 }
-                else if (secretWord.Substring(i, secretWord.Length-i).Contains(guess[i]))
-                {
-                    result += "1";
 
-                    wrongplace += guess[i];
-                }
-                else if (secretWord.Substring(0,i).Contains(guess[i]))
-                {
-                    result += "1";
-                    wrongplace += guess[i];
-                }
-                else
+                int correct_count = secretWord.ToCharArray().Count(c => c == guess[i]) - correct.ToCharArray().Count(c => c == guess[i]);
+
+                if (wrongplace.Contains(guess[i]))
                 {
                     result += "0";
+                    wrongplace += "0";
+                    continue;
                 }
+
+                if (correct_count == 1)
+                {
+                    result += "1";
+                    wrongplace += guess[i];
+                    continue;
+                }
+                result+= "0";
+                wrongplace += "0";
             }
             return result;
         }
